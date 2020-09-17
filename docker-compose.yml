@@ -1,0 +1,12 @@
+version: '3.3'
+
+services:
+  dev-db:
+    image: centos/postgresql-96-centos7:9.6
+    ports:
+    - '5432:5432'
+    environment:
+      POSTGRESQL_PASSWORD: dev-password
+      POSTGRESQL_USER: dev-user
+      POSTGRESQL_DATABASE: devdb
+      POSTGRESQL_ADMIN_PASSWORD: dev-admin-password
