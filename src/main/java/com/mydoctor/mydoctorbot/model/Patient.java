@@ -16,10 +16,9 @@ import java.time.LocalDateTime;
 @ToString
 public class Patient {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String firstName;
     private String lastName;
     private LocalDateTime dateOfBirth;
-    private String typeOfDoctor;
 }

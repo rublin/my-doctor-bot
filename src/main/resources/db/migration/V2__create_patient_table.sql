@@ -3,8 +3,7 @@ create table patient
 	id bigserial not null,
 	first_name varchar not null,
 	last_name varchar not null,
-	date_of_birth timestamp,
-	type_of_doctor varchar not null
+	date_of_birth timestamp
 );
 
 create unique index patient_id_uindex

@@ -14,19 +14,16 @@ public class PatientService {
     @Autowired
     private PatientRepository patientRepository;
 
-    public Patient create(String firstName, String lastName, String typeOfDoctor) {
+    public Patient create(String firstName, String lastName) {
         Patient patient = new Patient();
         patient.setFirstName(firstName);
         patient.setLastName(lastName);
-        patient.setTypeOfDoctor(typeOfDoctor);
 
         Patient saved = patientRepository.save(patient);
         return saved;
-
     }
 
-    public List<Patient> getaAll() {
-
+    public List<Patient> getAll() {
         return Lists.newArrayList(patientRepository.findAll());
     }
 }
