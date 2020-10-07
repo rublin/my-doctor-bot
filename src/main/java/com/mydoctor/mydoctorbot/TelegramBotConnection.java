@@ -1,7 +1,9 @@
 package com.mydoctor.mydoctorbot;
 
 import com.mydoctor.mydoctorbot.model.Doctor;
+import com.mydoctor.mydoctorbot.model.Patient;
 import com.mydoctor.mydoctorbot.service.DoctorService;
+import com.mydoctor.mydoctorbot.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,16 +20,20 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
 
     @Autowired
     private DoctorService doctorService;
+    @Autowired
+    private PatientService patientService;
 
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
             String[] split = text.split(" ");
-            Doctor doctor = doctorService.create(split[0], split[1], split[2]);
+//            Doctor doctor = doctorService.create(split[0], split[1], split[2]);
+            Patient patient = patientService.create(split[0], split[1]);
             SendMessage message = new SendMessage() // Create a SendMessage object with mandatory fields
                     .setChatId(update.getMessage().getChatId())
-                    .setText("Doctor created: " + doctor);
+//                    .setText("Doctor created: " + doctor);
+                    .setText("Patient created: " + patient);
             try {
                 execute(message); // Call method to send the message
             } catch (TelegramApiException e) {
