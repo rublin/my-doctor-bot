@@ -15,7 +15,7 @@ public class DoctorService {
     private DoctorRepository doctorRepository;
 
     public Doctor create(String firstName, String lastName, String specialization) {
-        Doctor doctor = new Doctor();
+        var doctor = new Doctor();
         doctor.setFirstName(firstName);
         doctor.setLastName(lastName);
         doctor.setSpecialization(specialization);
