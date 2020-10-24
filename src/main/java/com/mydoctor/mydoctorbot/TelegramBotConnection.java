@@ -33,11 +33,24 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
+            Long chatId = update.getMessage().getChatId();
 
             if ("I'm a patient".equals(text)) {
                 execute(new SendMessage()
-                        .setChatId(update.getMessage().getChatId())
+                        .setChatId(chatId)
                         .setText("You are a patient"));
+                return;
+            }
+            if ("I'm a doctor".equals(text)) {
+                execute(new SendMessage()
+                        .setChatId(chatId)
+                        .setText("You are a doctor"));
+                return;
+            }
+            if ("I'm not sure".equals(text)) {
+                execute(new SendMessage()
+                        .setChatId(update.getMessage().getChatId())
+                        .setText("You are not sure"));
                 return;
             }
 
@@ -46,7 +59,7 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
             Patient patient = patientService.create(split[0], split[1]);
             SendMessage message = new SendMessage() // Create a SendMessage object with mandatory fields
                     .setChatId(update.getMessage().getChatId())
-                    .setReplyMarkup(twoKeys())
+                    .setReplyMarkup(threeKeys())
 //                    .setText("Doctor created: " + doctor);
                     .setText("Patient created: " + patient);
             try {
@@ -57,11 +70,12 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
         }
     }
 
-    private ReplyKeyboard twoKeys() {
+    private ReplyKeyboard threeKeys() {
         var rkm = new ReplyKeyboardMarkup();
         KeyboardRow keyboardButtons = new KeyboardRow();
         keyboardButtons.add("I'm a doctor");
         keyboardButtons.add("I'm a patient");
+        keyboardButtons.add("I'm not sure");
         rkm.setKeyboard(Collections.singletonList(keyboardButtons));
         rkm.setResizeKeyboard(true);
 
