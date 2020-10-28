@@ -1,8 +1,9 @@
 package com.mydoctor.mydoctorbot;
 
 import com.mydoctor.mydoctorbot.model.Patient;
-import com.mydoctor.mydoctorbot.service.DoctorService;
+import com.mydoctor.mydoctorbot.model.SystemUser;
 import com.mydoctor.mydoctorbot.service.PatientService;
+import com.mydoctor.mydoctorbot.service.telegram.SystemUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +25,15 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
     private final String token;
 
     @Autowired
-    private DoctorService doctorService;
+    private SystemUserService systemUserService;
     @Autowired
     private PatientService patientService;
 
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
+        SystemUser systemUser = systemUserService.auth(update.getMessage().getChatId());
+
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
 
