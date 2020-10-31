@@ -1,8 +1,11 @@
 package com.mydoctor.mydoctorbot;
 
-import com.mydoctor.mydoctorbot.model.Patient;
+import com.google.common.base.Functions;
 import com.mydoctor.mydoctorbot.model.SystemUser;
-import com.mydoctor.mydoctorbot.service.PatientService;
+import com.mydoctor.mydoctorbot.service.telegram.FlowService;
+import com.mydoctor.mydoctorbot.service.telegram.Key;
+import com.mydoctor.mydoctorbot.service.telegram.Step;
+import com.mydoctor.mydoctorbot.service.telegram.StepService;
 import com.mydoctor.mydoctorbot.service.telegram.SystemUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -16,7 +19,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,34 +36,47 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
 
     @Autowired
     private SystemUserService systemUserService;
+
     @Autowired
-    private PatientService patientService;
+    private List<StepService> stepServiceList;
+
+    @Autowired
+    private List<FlowService> flowServiceList;
+
+    private Map<Step, StepService> stepServices;
+    private Map<Key, FlowService> flowServices;
 
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
-        SystemUser systemUser = systemUserService.auth(update.getMessage().getChatId());
+        Long telegramId = update.getMessage().getChatId();
+        SystemUser systemUser = systemUserService.auth(telegramId);
+
+        if (systemUser.hasFlow()) {
+            StepService stepService = stepServices.get(systemUser.getStep());
+            SendMessage sendMessage = stepService.processStep(update.getMessage(), systemUser);
+            execute(sendMessage);
+            return;
+        }
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
 
-            if ("I'm a patient".equals(text)) {
-                execute(new SendMessage()
-                        .setChatId(update.getMessage().getChatId())
-                        .setText("You are a patient"));
+            Optional<Key> optional = Key.findFlowKey(text);
+            if (optional.isPresent()) {
+                Key key = optional.get();
+                FlowService flowService = flowServices.get(key);
+                SendMessage sendMessage = flowService.startFlow(systemUser);
+
+                execute(sendMessage);
                 return;
             }
 
-            String[] split = text.split(" ");
-//            Doctor doctor = doctorService.create(split[0], split[1], split[2]);
-            Patient patient = patientService.create(split[0], split[1]);
-            SendMessage message = new SendMessage() // Create a SendMessage object with mandatory fields
-                    .setChatId(update.getMessage().getChatId())
-                    .setReplyMarkup(twoKeys())
-//                    .setText("Doctor created: " + doctor);
-                    .setText("Patient created: " + patient);
             try {
-                execute(message); // Call method to send the message
+                execute(new SendMessage()
+                        .setChatId(telegramId)
+                        .setReplyMarkup(twoKeys())
+                        .setText("text")); // Call method to send the message
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -63,8 +86,8 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
     private ReplyKeyboard twoKeys() {
         var rkm = new ReplyKeyboardMarkup();
         KeyboardRow keyboardButtons = new KeyboardRow();
-        keyboardButtons.add("I'm a doctor");
-        keyboardButtons.add("I'm a patient");
+        keyboardButtons.add(Key.REGISTER_DOCTOR.getMessage());
+        keyboardButtons.add(Key.FIND_DOCTOR.getMessage());
         rkm.setKeyboard(Collections.singletonList(keyboardButtons));
         rkm.setResizeKeyboard(true);
 
@@ -88,5 +111,14 @@ public class TelegramBotConnection extends TelegramLongPollingBot {
         execute(new SendMessage()
                 .setChatId(241931659L)
                 .setText("Happy birth day!"));
+    }
+
+    @PostConstruct
+    private void init() {
+        stepServices = stepServiceList.stream()
+                .collect(toMap(StepService::getStep, Functions.identity()));
+
+        flowServices = flowServiceList.stream()
+                .collect(toMap(FlowService::getFlow, Function.identity()));
     }
 }
